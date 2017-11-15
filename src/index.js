@@ -18,7 +18,7 @@ let MailTemplateAdapter = mailOptions => {
     return adapter;
   }
 
-  var customeized = {}
+  var customized = {}
 
 
   if (mailOptions.template.verification) {
@@ -29,9 +29,14 @@ let MailTemplateAdapter = mailOptions => {
     }
     var verificationSubject = verification.subject;
     var verificationText = "";
+	var verificationHtml;
+	var payload;
 
     if (verification.body) {
       verificationText = verification.body;
+    }
+	else if (verification.html) {
+      verificationHtml = verification.html;       
     }
     else if (verification.bodyFile) {
       verificationText = fs.readFileSync(verification.bodyFile, "utf8");        
@@ -40,14 +45,20 @@ let MailTemplateAdapter = mailOptions => {
       throw 'MailTemplateAdapter verification requires body.';
     }
 
-    customeized.sendVerificationEmail = function(options) {
+    customized.sendVerificationEmail = function(options) {
       return new Promise((resolve, reject) => {
 
         var to = options.user.get("email");
-        var text = replacePlaceHolder(verificationText, options);
+        var html = replacePlaceHolder(verificationHtml, options);
+		var text = replacePlaceHolder(verificationText, options);
         var subject = replacePlaceHolder(verificationSubject, options);
+		if(verificationHtml){
+			payload = { html: html, to: to, subject: subject }
+		}else{
+			payload = { text: text, to: to, subject: subject }
+		}
 
-        this.sendMail({ text: text, to: to, subject: subject }).then(json => {
+        this.sendMail(payload).then(json => {
           resolve(json);
         }, err => {
           reject(err);
@@ -64,9 +75,14 @@ let MailTemplateAdapter = mailOptions => {
     }
     var resetPasswordSubject = resetPassword.subject;
     var resetPasswordText = "";
+	var resetPasswordHtml;
+	var payload;
 
     if (resetPassword.body) {
       resetPasswordText = resetPassword.body;
+    }
+	else if (verification.html) {
+      resetPasswordHtml = verification.html;       
     }
     else if (resetPassword.bodyFile) {
       resetPasswordText = fs.readFileSync(resetPassword.bodyFile, "utf8");        
@@ -75,14 +91,20 @@ let MailTemplateAdapter = mailOptions => {
       throw 'MailTemplateAdapter resetPassword requires body.';
     }
 
-    customeized.sendPasswordResetEmail = function(options) {
+    customized.sendPasswordResetEmail = function(options) {
       return new Promise((resolve, reject) => {
 
         var to = options.user.get("email");
+		var html = replacePlaceHolder(resetPasswordHtml, options);
         var text = replacePlaceHolder(resetPasswordText, options);
         var subject = replacePlaceHolder(resetPasswordSubject, options);
+		if(resetPasswordHtml){
+			payload = { html: html, to: to, subject: subject }
+		}else{
+			payload = { text: text, to: to, subject: subject }
+		}
 
-        this.sendMail({ text: text, to: to, subject: subject }).then(json => {
+        this.sendMail(payload).then(json => {
           resolve(json);
         }, err => {
           reject(err);
@@ -92,7 +114,7 @@ let MailTemplateAdapter = mailOptions => {
   }
 
 
-  return Object.freeze(Object.assign(customeized, adapter));
+  return Object.freeze(Object.assign(customized, adapter));
 }
 
 module.exports = MailTemplateAdapter
